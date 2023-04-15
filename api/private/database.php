@@ -28,8 +28,15 @@ class Database {
     public function close() {
         $this->connection->close();
     }
+
+    public function executePreparedQuery($query, $params, $types) {
+        $stmt = mysqli_prepare($this->connection, $query);
+        mysqli_stmt_bind_param($stmt, $types, ...$params);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        mysqli_stmt_close($stmt);
+        return $result;
+    }
 }
-
-
 
 ?>
