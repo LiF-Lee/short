@@ -9,20 +9,82 @@ class Short extends Database {
         $this->connect();
     }
 
-    public function test() {
-        $query = "SELECT * FROM SHORT WHERE id = ?";
-        $params = array(3);
-        $types = "i";
+    public function CreateShortURL($original_url) {
+        $this->validateURL($original_url);
+
+        if ($existingShortURL = $this->findShortURL($original_url, 'original_url')) {
+            $this->sendJsonResponse(200, array('original_url' => $original_url, 'short_url' => 'https://s.leesj.co/' . $existingShortURL));
+        } else {
+            $short_url = $this->createUniqueShortURL();
+
+            $this->executePreparedQuery(
+                "INSERT INTO SHORT (original_url, short_url) VALUES (?, ?)", 
+                array($original_url, $short_url), 
+                "ss"
+            );
+
+            $this->sendJsonResponse(200, array('original_url' => $original_url, 'short_url' => $short_url));
+        }
+    }
+
+    private function validateURL($url) {
+        if (!preg_match('/^[a-z]+:\/\/.+$/', $url)) {
+            $this->sendJsonResponse(400, array('error' => "Invalid URL ('" . $url . "')"));
+        }
+    }
+
+    private function findShortURL($value, $type) {
+        $query = "SELECT * FROM SHORT WHERE " . $type . " = ?";
+        $params = [$value];
+        $types = "s";
+
         $result = $this->executePreparedQuery($query, $params, $types);
 
-        while ($row = mysqli_fetch_array($result)) {
-            echo $row['id'] . " " . $row['create_time'] . " " . $row['original_url'] . " " . $row['short_url'] . " " . $row['enable'] . "<br>";
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row["short_url"];
         }
+
+        return false;
+    }
+
+    private function createUniqueShortURL() {
+        $short_url = $this->generateRandomString(5);
+
+        if (!$this->findShortURL($short_url, 'short_url')) {
+            return $short_url;
+        } else {
+            return $this->createUniqueShortURL();
+        }
+    }
+
+    private function generateRandomString($length = 10) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+
+        return $randomString;
+    }
+
+    private function sendJsonResponse($responseCode, $responseData) {
+        http_response_code($responseCode);
+        header('Content-Type: application/json; charset=utf-8');
+
+        echo json_encode(array(
+            'status' => $responseCode,
+            'data' => $responseData
+        ), JSON_UNESCAPED_UNICODE);
+
+        exit();
     }
 }
 
 $short = new Short;
-$short->test();
+$short->CreateShortURL($_GET["url"]);
 $short->close();
 
 ?>
