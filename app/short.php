@@ -10,17 +10,22 @@ class Short extends Database {
     }
 
     public function RedirectShortURL($short_url) {
-        $original_url = $this->findOriginalURL($short_url, 'short_url');
+        list($original_url, $enable) = $this->findOriginalURL($short_url);
+        
         if (!$original_url) {
             $this->sendJsonResponse(400, array('error' => "Not Found"));
-        } else {
-            header("Location: $original_url", true, 301);
-            exit();
-        }
+        } 
+        
+        if (!$enable) {
+            $this->sendJsonResponse(400, array('error' => "This URL has been deactivated"));
+        } 
+
+        header("Location: $original_url", true, 301);
+        exit();
     }
 
-    private function findOriginalURL($value, $type) {
-        $query = "SELECT * FROM SHORT WHERE " . $type . " = ?";
+    private function findOriginalURL($value) {
+        $query = "SELECT * FROM SHORT WHERE BINARY short_url = ?";
         $params = [$value];
         $types = "s";
 
@@ -28,7 +33,7 @@ class Short extends Database {
 
         if ($result->num_rows > 0) {
             $row = $result->fetch_assoc();
-            return $row['original_url'];
+            return array($row['original_url'], $row['enable']);
         }
 
         return false;

@@ -12,7 +12,7 @@ class Short extends Database {
     public function CreateShortURL($original_url) {
         $this->validateURL($original_url);
 
-        if ($existingShortURL = $this->findShortURL($original_url, 'original_url')) {
+        if ($existingShortURL = $this->findShortURL($original_url)) {
             $this->sendJsonResponse(200, array('original_url' => $original_url, 'short_url' => 'https://s.leesj.co/' . $existingShortURL));
         } else {
             $short_url = $this->createUniqueShortURL();
@@ -33,8 +33,23 @@ class Short extends Database {
         }
     }
 
-    private function findShortURL($value, $type) {
-        $query = "SELECT * FROM SHORT WHERE " . $type . " = ?";
+    private function findOriginalURL($value) {
+        $query = "SELECT * FROM SHORT WHERE BINARY short_url = ?";
+        $params = [$value];
+        $types = "s";
+
+        $result = $this->executePreparedQuery($query, $params, $types);
+
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row["original_url"];
+        }
+
+        return false;
+    }
+
+    private function findShortURL($value) {
+        $query = "SELECT * FROM SHORT WHERE original_url = ?";
         $params = [$value];
         $types = "s";
 
@@ -51,7 +66,7 @@ class Short extends Database {
     private function createUniqueShortURL() {
         $short_url = $this->generateRandomString(5);
 
-        if (!$this->findShortURL($short_url, 'short_url')) {
+        if (!$this->findOriginalURL($short_url)) {
             return $short_url;
         } else {
             return $this->createUniqueShortURL();
