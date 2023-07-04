@@ -1,0 +1,29 @@
+RewriteOptions inherit
+
+<RequireAll>
+    Require all granted
+</RequireAll>
+
+Options All -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    RewriteCond %{ENV:HTTPS} !=on
+    RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+
+    # 파일이 실제로 존재하지 않을 경우에만 다음 규칙을 적용
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php
+
+    # .php를 제거
+    RewriteCond %{THE_REQUEST} ^[A-Z]+\ /([^/]*)\.php\ HTTP/
+    RewriteRule ^(.+)\.php$ /$1 [R=301,L]
+
+    # abc 로 들어오는 요청을 short?url=abc로 변경
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ /short?url=$1 [QSA,L]
+</IfModule>

@@ -23,7 +23,7 @@ class Short extends Database {
                 "ss"
             );
 
-            $this->sendJsonResponse(200, array('original_url' => $original_url, 'short_url' => $short_url));
+            $this->sendJsonResponse(200, array('original_url' => $original_url, 'short_url' => 'https://s.leesj.co/' . $short_url));
         }
     }
 
@@ -84,7 +84,7 @@ class Short extends Database {
 }
 
 $short = new Short;
-$short->CreateShortURL($_GET["url"]);
+$short->CreateShortURL($_POST["url"] ?? '');
 $short->close();
 
 ?>
