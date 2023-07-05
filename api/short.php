@@ -99,7 +99,9 @@ class Short extends Database {
 }
 
 $short = new Short;
-$short->CreateShortURL($_POST["url"] ?? '');
+$postData = file_get_contents('php://input');
+$data = json_decode($postData, true);
+$short->CreateShortURL($data["url"] ?? '');
 $short->close();
 
 ?>
