@@ -13,7 +13,7 @@ class Short extends Database {
         list($original_url, $enable) = $this->findOriginalURL($short_url);
         
         if (!$original_url) {
-            $this->sendJsonResponse(400, array('error' => "Not Found"));
+            $this->sendJsonResponse(404, array('error' => "Not Found"));
         } 
         
         if (!$enable) {
